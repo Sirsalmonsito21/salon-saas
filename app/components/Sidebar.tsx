@@ -3,7 +3,7 @@
 import { useRouter, usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Calendar, ShoppingCart, Users,
-  ClipboardList, Package, Scissors, UserCog, BarChart2, LogOut
+  ClipboardList, Package, Scissors, UserCog, BarChart2, LogOut, ChevronRight
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
@@ -16,13 +16,17 @@ const menuCajera = [
 ]
 
 const menuAdmin = [
-  { label: 'Productos', icon: Package, href: '/dashboard/productos' },
-  { label: 'Servicios', icon: Scissors, href: '/dashboard/servicios' },
-  { label: 'Empleados', icon: UserCog, href: '/dashboard/empleados' },
   { label: 'Reportes', icon: BarChart2, href: '/dashboard/reportes' },
+  { label: 'Empleados', icon: UserCog, href: '/dashboard/empleados' },
+  { label: 'Servicios', icon: Scissors, href: '/dashboard/servicios' },
+  { label: 'Productos', icon: Package, href: '/dashboard/productos' },
 ]
 
-export default function Sidebar({ rol, onRolChange, salonId }: { rol: string, onRolChange?: (rol: string) => void, salonId?: string }) {
+export default function Sidebar({ rol, onRolChange, salonId }: {
+  rol: string
+  onRolChange?: (rol: string) => void
+  salonId?: string
+}) {
   const router = useRouter()
   const pathname = usePathname()
 
@@ -33,60 +37,54 @@ export default function Sidebar({ rol, onRolChange, salonId }: { rol: string, on
 
   return (
     <aside style={{
-      width: '220px',
+      width: '220px', flexShrink: 0,
       background: 'var(--bg-surface)',
       borderRight: '1px solid var(--border)',
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100vh',
-      position: 'sticky',
-      top: 0,
-      flexShrink: 0,
+      display: 'flex', flexDirection: 'column',
+      height: '100vh', position: 'sticky', top: 0,
     }}>
       <div style={{
-        padding: '16px 20px',
+        padding: '14px 16px',
         borderBottom: '1px solid var(--border)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px'
+        display: 'flex', alignItems: 'center', gap: '10px'
       }}>
         <div style={{
-          width: '28px', height: '28px', borderRadius: '8px',
-          background: 'var(--accent)', display: 'flex',
-          alignItems: 'center', justifyContent: 'center',
-          fontSize: '13px', fontWeight: '600', color: 'white'
+          width: '32px', height: '32px', borderRadius: '9px', flexShrink: 0,
+          background: 'linear-gradient(135deg, #5b5bd6, #7c6af7)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '14px', fontWeight: '700', color: 'white'
         }}>S</div>
-        <div>
-          <p style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)' }}>Mi Salón</p>
-          <p style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>Plan Pro</p>
+        <div style={{ minWidth: 0 }}>
+          <p style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', letterSpacing: '-.01em' }}>Mi Salón</p>
+          <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '1px' }}>
+            Plan Pro · {rol === 'admin' ? 'Admin' : 'Cajera'}
+          </p>
         </div>
       </div>
 
-      <nav style={{ flex: 1, padding: '8px 0', overflowY: 'auto' }}>
+      <nav style={{ flex: 1, padding: '10px 8px', overflowY: 'auto' }}>
         <p style={{
-          fontSize: '11px', color: 'var(--text-tertiary)',
-          padding: '12px 20px 6px', textTransform: 'uppercase', letterSpacing: '.06em'
+          fontSize: '10px', color: 'var(--text-muted)', fontWeight: '500',
+          padding: '8px 8px 4px', textTransform: 'uppercase', letterSpacing: '.08em'
         }}>Principal</p>
 
         {menuCajera.map((item) => {
           const active = pathname === item.href
           return (
-            <button
-              key={item.href}
-              onClick={() => router.push(item.href)}
-              style={{
-                width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
-                padding: '7px 20px', fontSize: '13px', border: 'none',
-                background: active ? 'var(--bg-hover)' : 'transparent',
-                color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
-                fontWeight: active ? '500' : '400',
-                cursor: 'pointer', transition: 'all .1s', textAlign: 'left',
-                borderLeft: active ? '2px solid var(--accent)' : '2px solid transparent',
-              }}
-              onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)' }}
-              onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+            <button key={item.href} onClick={() => router.push(item.href)} style={{
+              width: '100%', display: 'flex', alignItems: 'center', gap: '9px',
+              padding: '7px 10px', fontSize: '13px', border: 'none', borderRadius: '7px',
+              background: active ? 'var(--bg-hover)' : 'transparent',
+              color: active ? 'var(--text-primary)' : 'var(--text-tertiary)',
+              fontWeight: active ? '500' : '400',
+              cursor: 'pointer', transition: 'all .1s', textAlign: 'left',
+              marginBottom: '1px',
+              borderLeft: `2px solid ${active ? 'var(--accent)' : 'transparent'}`,
+            }}
+              onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)' }}
+              onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = 'var(--text-tertiary)' }}
             >
-              <item.icon size={15} />
+              <item.icon size={14} />
               {item.label}
             </button>
           )
@@ -95,28 +93,26 @@ export default function Sidebar({ rol, onRolChange, salonId }: { rol: string, on
         {rol === 'admin' && (
           <>
             <p style={{
-              fontSize: '11px', color: 'var(--text-tertiary)',
-              padding: '16px 20px 6px', textTransform: 'uppercase', letterSpacing: '.06em'
+              fontSize: '10px', color: 'var(--text-muted)', fontWeight: '500',
+              padding: '14px 8px 4px', textTransform: 'uppercase', letterSpacing: '.08em'
             }}>Administración</p>
             {menuAdmin.map((item) => {
               const active = pathname === item.href
               return (
-                <button
-                  key={item.href}
-                  onClick={() => router.push(item.href)}
-                  style={{
-                    width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
-                    padding: '7px 20px', fontSize: '13px', border: 'none',
-                    background: active ? 'var(--bg-hover)' : 'transparent',
-                    color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
-                    fontWeight: active ? '500' : '400',
-                    cursor: 'pointer', transition: 'all .1s', textAlign: 'left',
-                    borderLeft: active ? '2px solid var(--accent)' : '2px solid transparent',
-                  }}
-                  onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)' }}
-                  onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+                <button key={item.href} onClick={() => router.push(item.href)} style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: '9px',
+                  padding: '7px 10px', fontSize: '13px', border: 'none', borderRadius: '7px',
+                  background: active ? 'var(--bg-hover)' : 'transparent',
+                  color: active ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                  fontWeight: active ? '500' : '400',
+                  cursor: 'pointer', transition: 'all .1s', textAlign: 'left',
+                  marginBottom: '1px',
+                  borderLeft: `2px solid ${active ? 'var(--accent)' : 'transparent'}`,
+                }}
+                  onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)' }}
+                  onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = 'var(--text-tertiary)' }}
                 >
-                  <item.icon size={15} />
+                  <item.icon size={14} />
                   {item.label}
                 </button>
               )
@@ -125,34 +121,30 @@ export default function Sidebar({ rol, onRolChange, salonId }: { rol: string, on
         )}
       </nav>
 
-      <div style={{ padding: '12px 12px', borderTop: '1px solid var(--border)' }}>
+      <div style={{ padding: '10px 8px', borderTop: '1px solid var(--border)' }}>
         {onRolChange && (
-          <button
-            onClick={() => onRolChange(rol === 'admin' ? 'cajera' : 'admin')}
-            style={{
-              width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
-              padding: '7px 8px', fontSize: '13px', border: 'none',
-              background: 'transparent', color: 'var(--text-tertiary)',
-              cursor: 'pointer', borderRadius: '6px', marginBottom: '4px'
-            }}
-            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)'}
-            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-tertiary)'}
+          <button onClick={() => onRolChange(rol === 'admin' ? 'cajera' : 'admin')} style={{
+            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '7px 10px', fontSize: '12px', border: 'none', borderRadius: '7px',
+            background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer',
+            marginBottom: '2px'
+          }}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'}
           >
-            {rol === 'admin' ? '← Vista cajera' : '→ Vista admin'}
+            <span>{rol === 'admin' ? '← Vista cajera' : '→ Vista admin'}</span>
+            <ChevronRight size={12} />
           </button>
         )}
-        <button
-          onClick={handleLogout}
-          style={{
-            width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
-            padding: '7px 8px', fontSize: '13px', border: 'none',
-            background: 'transparent', color: 'var(--text-tertiary)',
-            cursor: 'pointer', transition: 'color .1s', borderRadius: '6px',
-          }}
+        <button onClick={handleLogout} style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: '9px',
+          padding: '7px 10px', fontSize: '13px', border: 'none', borderRadius: '7px',
+          background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer',
+        }}
           onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--danger)'}
-          onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-tertiary)'}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'}
         >
-          <LogOut size={15} />
+          <LogOut size={14} />
           Cerrar sesión
         </button>
       </div>
