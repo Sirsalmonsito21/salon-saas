@@ -22,7 +22,7 @@ const menuAdmin = [
   { label: 'Reportes', icon: BarChart2, href: '/dashboard/reportes' },
 ]
 
-export default function Sidebar({ rol }: { rol: string }) {
+export default function Sidebar({ rol, onRolChange, salonId }: { rol: string, onRolChange?: (rol: string) => void, salonId?: string }) {
   const router = useRouter()
   const pathname = usePathname()
 
@@ -32,56 +32,127 @@ export default function Sidebar({ rol }: { rol: string }) {
   }
 
   return (
-    <aside className="w-52 bg-white border-r border-gray-100 flex flex-col h-screen sticky top-0">
-      <div className="p-4 border-b border-gray-100">
-        <p className="text-sm font-medium text-gray-900">Mi Salón</p>
-        <p className="text-xs text-gray-400 mt-0.5">Plan Pro</p>
+    <aside style={{
+      width: '220px',
+      background: 'var(--bg-surface)',
+      borderRight: '1px solid var(--border)',
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100vh',
+      position: 'sticky',
+      top: 0,
+      flexShrink: 0,
+    }}>
+      <div style={{
+        padding: '16px 20px',
+        borderBottom: '1px solid var(--border)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px'
+      }}>
+        <div style={{
+          width: '28px', height: '28px', borderRadius: '8px',
+          background: 'var(--accent)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center',
+          fontSize: '13px', fontWeight: '600', color: 'white'
+        }}>S</div>
+        <div>
+          <p style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)' }}>Mi Salón</p>
+          <p style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>Plan Pro</p>
+        </div>
       </div>
 
-      <nav className="flex-1 py-2">
-        <p className="text-xs text-gray-400 px-4 py-2 uppercase tracking-wider">Principal</p>
-        {menuCajera.map((item) => (
-          <button
-            key={item.href}
-            onClick={() => router.push(item.href)}
-            className={`w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors
-              ${pathname === item.href
-                ? 'bg-blue-50 text-blue-600 font-medium'
-                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-              }`}
-          >
-            <item.icon size={16} />
-            {item.label}
-          </button>
-        ))}
+      <nav style={{ flex: 1, padding: '8px 0', overflowY: 'auto' }}>
+        <p style={{
+          fontSize: '11px', color: 'var(--text-tertiary)',
+          padding: '12px 20px 6px', textTransform: 'uppercase', letterSpacing: '.06em'
+        }}>Principal</p>
+
+        {menuCajera.map((item) => {
+          const active = pathname === item.href
+          return (
+            <button
+              key={item.href}
+              onClick={() => router.push(item.href)}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '7px 20px', fontSize: '13px', border: 'none',
+                background: active ? 'var(--bg-hover)' : 'transparent',
+                color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
+                fontWeight: active ? '500' : '400',
+                cursor: 'pointer', transition: 'all .1s', textAlign: 'left',
+                borderLeft: active ? '2px solid var(--accent)' : '2px solid transparent',
+              }}
+              onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)' }}
+              onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+            >
+              <item.icon size={15} />
+              {item.label}
+            </button>
+          )
+        })}
 
         {rol === 'admin' && (
           <>
-            <p className="text-xs text-gray-400 px-4 py-2 mt-2 uppercase tracking-wider">Administración</p>
-            {menuAdmin.map((item) => (
-              <button
-                key={item.href}
-                onClick={() => router.push(item.href)}
-                className={`w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors
-                  ${pathname === item.href
-                    ? 'bg-blue-50 text-blue-600 font-medium'
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
-              >
-                <item.icon size={16} />
-                {item.label}
-              </button>
-            ))}
+            <p style={{
+              fontSize: '11px', color: 'var(--text-tertiary)',
+              padding: '16px 20px 6px', textTransform: 'uppercase', letterSpacing: '.06em'
+            }}>Administración</p>
+            {menuAdmin.map((item) => {
+              const active = pathname === item.href
+              return (
+                <button
+                  key={item.href}
+                  onClick={() => router.push(item.href)}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
+                    padding: '7px 20px', fontSize: '13px', border: 'none',
+                    background: active ? 'var(--bg-hover)' : 'transparent',
+                    color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    fontWeight: active ? '500' : '400',
+                    cursor: 'pointer', transition: 'all .1s', textAlign: 'left',
+                    borderLeft: active ? '2px solid var(--accent)' : '2px solid transparent',
+                  }}
+                  onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)' }}
+                  onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+                >
+                  <item.icon size={15} />
+                  {item.label}
+                </button>
+              )
+            })}
           </>
         )}
       </nav>
 
-      <div className="p-4 border-t border-gray-100">
+      <div style={{ padding: '12px 12px', borderTop: '1px solid var(--border)' }}>
+        {onRolChange && (
+          <button
+            onClick={() => onRolChange(rol === 'admin' ? 'cajera' : 'admin')}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
+              padding: '7px 8px', fontSize: '13px', border: 'none',
+              background: 'transparent', color: 'var(--text-tertiary)',
+              cursor: 'pointer', borderRadius: '6px', marginBottom: '4px'
+            }}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)'}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-tertiary)'}
+          >
+            {rol === 'admin' ? '← Vista cajera' : '→ Vista admin'}
+          </button>
+        )}
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-2 py-2 text-sm text-gray-500 hover:text-red-500 transition-colors"
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
+            padding: '7px 8px', fontSize: '13px', border: 'none',
+            background: 'transparent', color: 'var(--text-tertiary)',
+            cursor: 'pointer', transition: 'color .1s', borderRadius: '6px',
+          }}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--danger)'}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-tertiary)'}
         >
-          <LogOut size={16} />
+          <LogOut size={15} />
           Cerrar sesión
         </button>
       </div>

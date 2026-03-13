@@ -2,93 +2,99 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
-import Sidebar from '../components/Sidebar'
 import { ShoppingCart, Calendar, Users, Cake } from 'lucide-react'
 
 export default function Dashboard() {
-  const [user, setUser] = useState<any>(null)
-  const [rol, setRol] = useState('cajera')
-  const router = useRouter()
+  const [ventas, setVentas] = useState(0)
+  const [citas, setCitas] = useState(0)
+  const [clientes, setClientes] = useState(0)
+  const [cumples, setCumples] = useState(0)
 
   useEffect(() => {
-    async function getUser() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/login')
-      } else {
-        setUser(user)
-      }
+    async function cargarDatos() {
+      const hoy = new Date().toISOString().split('T')[0]
+
+      const [{ data: v }, { data: c }, { data: cl }] = await Promise.all([
+        supabase.from('ventas').select('total').gte('created_at', hoy),
+        supabase.from('citas').select('id').eq('fecha', hoy),
+        supabase.from('clientes').select('fecha_nac'),
+      ])
+
+      const totalVentas = (v || []).reduce((acc: number, x: any) => acc + parseFloat(x.total), 0)
+      setVentas(totalVentas)
+      setCitas((c || []).length)
+      setClientes((cl || []).length)
+
+      const hoyDate = new Date()
+      const cumpleHoy = (cl || []).filter((c: any) => {
+        if (!c.fecha_nac) return false
+        const cumple = new Date(c.fecha_nac)
+        return cumple.getDate() === hoyDate.getDate() && cumple.getMonth() === hoyDate.getMonth()
+      })
+      setCumples(cumpleHoy.length)
     }
-    getUser()
+    cargarDatos()
   }, [])
 
-  if (!user) return (
-    <div className="flex items-center justify-center h-screen text-gray-400 text-sm">
-      Cargando...
-    </div>
-  )
+  const metrics = [
+    { label: 'Ventas hoy', value: `S/ ${ventas.toFixed(2)}`, sub: 'ingresos del día', icon: ShoppingCart, color: 'var(--accent)' },
+    { label: 'Citas hoy', value: `${citas}`, sub: 'agendadas', icon: Calendar, color: '#8b5cf6' },
+    { label: 'Clientes', value: `${clientes}`, sub: 'registrados', icon: Users, color: 'var(--success)' },
+    { label: 'Cumpleaños hoy', value: `${cumples}`, sub: 'clientes', icon: Cake, color: 'var(--warning)' },
+  ]
 
   return (
-    <div className="flex bg-gray-50 min-h-screen">
-      <Sidebar rol={rol} />
+    <>
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ fontSize: '16px', fontWeight: '500', color: 'var(--text-primary)' }}>Inicio</h1>
+        <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+          {new Date().toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' })}
+        </p>
+      </div>
 
-      <main className="flex-1 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-lg font-medium text-gray-900">Inicio</h1>
-            <p className="text-sm text-gray-400 mt-0.5">Bienvenida, {user.email}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setRol(rol === 'admin' ? 'cajera' : 'admin')}
-              className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 transition-colors"
-            >
-              {rol === 'admin' ? 'Vista: Admin' : 'Vista: Cajera'}
-            </button>
-            <span className="text-sm text-gray-400">
-              {new Date().toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' })}
-            </span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          {[
-            { label: 'Ventas hoy', value: 'S/ 0', sub: '0 transacciones', icon: ShoppingCart, color: 'text-blue-500 bg-blue-50' },
-            { label: 'Citas hoy', value: '0', sub: '0 pendientes', icon: Calendar, color: 'text-purple-500 bg-purple-50' },
-            { label: 'Clientes', value: '0', sub: '0 nuevos esta semana', icon: Users, color: 'text-green-500 bg-green-50' },
-            { label: 'Cumpleaños hoy', value: '0', sub: 'clientes', icon: Cake, color: 'text-amber-500 bg-amber-50' },
-          ].map((m) => (
-            <div key={m.label} className="bg-white rounded-xl border border-gray-100 p-4">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs text-gray-400">{m.label}</span>
-                <div className={`p-1.5 rounded-lg ${m.color}`}>
-                  <m.icon size={14} />
-                </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
+        {metrics.map((m) => (
+          <div key={m.label} style={{
+            background: 'var(--bg-surface)', border: '1px solid var(--border)',
+            borderRadius: '12px', padding: '16px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>{m.label}</span>
+              <div style={{
+                width: '28px', height: '28px', borderRadius: '8px',
+                background: 'var(--bg-elevated)', display: 'flex',
+                alignItems: 'center', justifyContent: 'center', color: m.color
+              }}>
+                <m.icon size={14} />
               </div>
-              <p className="text-2xl font-medium text-gray-900">{m.value}</p>
-              <p className="text-xs text-gray-400 mt-1">{m.sub}</p>
             </div>
-          ))}
+            <p style={{ fontSize: '22px', fontWeight: '500', color: 'var(--text-primary)' }}>{m.value}</p>
+            <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '4px' }}>{m.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        <div style={{
+          background: 'var(--bg-surface)', border: '1px solid var(--border)',
+          borderRadius: '12px', padding: '16px'
+        }}>
+          <h2 style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', marginBottom: '16px' }}>Citas del día</h2>
+          <p style={{ fontSize: '13px', color: 'var(--text-tertiary)', textAlign: 'center', padding: '24px 0' }}>
+            No hay citas para hoy
+          </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-white rounded-xl border border-gray-100 p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-medium text-gray-900">Citas del día</h2>
-              <button className="text-xs text-blue-500 hover:text-blue-600">+ Nueva cita</button>
-            </div>
-            <p className="text-sm text-gray-400 text-center py-6">No hay citas para hoy</p>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-100 p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-medium text-gray-900">Cumpleaños esta semana</h2>
-            </div>
-            <p className="text-sm text-gray-400 text-center py-6">No hay cumpleaños esta semana</p>
-          </div>
+        <div style={{
+          background: 'var(--bg-surface)', border: '1px solid var(--border)',
+          borderRadius: '12px', padding: '16px'
+        }}>
+          <h2 style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', marginBottom: '16px' }}>Cumpleaños esta semana</h2>
+          <p style={{ fontSize: '13px', color: 'var(--text-tertiary)', textAlign: 'center', padding: '24px 0' }}>
+            No hay cumpleaños esta semana
+          </p>
         </div>
-      </main>
-    </div>
+      </div>
+    </>
   )
 }

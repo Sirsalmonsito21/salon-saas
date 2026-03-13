@@ -2,71 +2,66 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Users, Plus, Search, Phone, Mail, Cake, X } from 'lucide-react'
+import { UserCog, Plus, X, Phone, Mail, Check } from 'lucide-react'
 
-export default function Clientes() {
+export default function Empleados() {
   const [user, setUser] = useState<any>(null)
-  const [clientes, setClientes] = useState<any[]>([])
-  const [busqueda, setBusqueda] = useState('')
+  const [empleados, setEmpleados] = useState<any[]>([])
   const [mostrarForm, setMostrarForm] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [form, setForm] = useState({ nombre: '', telefono: '', email: '', fecha_nac: '', notas: '' })
+  const [form, setForm] = useState({
+    nombre: '', cargo: '', telefono: '', email: '',
+    activo: true
+  })
 
   useEffect(() => {
     async function init() {
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
-      cargarClientes()
+      cargarEmpleados()
     }
     init()
   }, [])
 
-  async function cargarClientes() {
-    const { data } = await supabase.from('clientes').select('*').order('nombre')
-    setClientes(data || [])
+  async function cargarEmpleados() {
+    const { data } = await supabase
+      .from('empleados')
+      .select('*')
+      .order('nombre')
+    setEmpleados(data || [])
   }
 
-  async function guardarCliente() {
+  async function guardarEmpleado() {
     if (!form.nombre) return
     setLoading(true)
-    await supabase.from('clientes').insert({ ...form, salon_id: user?.id })
-    setForm({ nombre: '', telefono: '', email: '', fecha_nac: '', notas: '' })
+    await supabase.from('empleados').insert({ ...form, salon_id: user?.id })
+    setForm({ nombre: '', cargo: '', telefono: '', email: '', activo: true })
     setMostrarForm(false)
-    cargarClientes()
+    cargarEmpleados()
     setLoading(false)
   }
 
-  async function eliminarCliente(id: string) {
-    if (!confirm('¿Eliminar este cliente?')) return
-    await supabase.from('clientes').delete().eq('id', id)
-    cargarClientes()
+  async function toggleActivo(id: string, activo: boolean) {
+    await supabase.from('empleados').update({ activo: !activo }).eq('id', id)
+    cargarEmpleados()
   }
 
-  const filtrados = clientes.filter(c =>
-    c.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-    c.telefono?.includes(busqueda) ||
-    c.email?.toLowerCase().includes(busqueda.toLowerCase())
-  )
-
-  function cumpleEsSemana(fecha: string) {
-    if (!fecha) return false
-    const hoy = new Date()
-    const cumple = new Date(fecha)
-    cumple.setFullYear(hoy.getFullYear())
-    const diff = (cumple.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24)
-    return diff >= 0 && diff <= 7
+  async function eliminar(id: string) {
+    if (!confirm('¿Eliminar este empleado?')) return
+    await supabase.from('empleados').delete().eq('id', id)
+    cargarEmpleados()
   }
 
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Users size={18} color="var(--text-tertiary)" />
-          <h1 style={{ fontSize: '16px', fontWeight: '500', color: 'var(--text-primary)' }}>Clientes</h1>
+          <UserCog size={18} color="var(--text-tertiary)" />
+          <h1 style={{ fontSize: '16px', fontWeight: '500', color: 'var(--text-primary)' }}>Empleados</h1>
           <span style={{
             fontSize: '11px', background: 'var(--bg-elevated)', color: 'var(--text-tertiary)',
             padding: '2px 8px', borderRadius: '99px', border: '1px solid var(--border)'
-          }}>{clientes.length}</span>
+          }}>{empleados.length}</span>
         </div>
         <button
           onClick={() => setMostrarForm(!mostrarForm)}
@@ -76,7 +71,7 @@ export default function Clientes() {
             fontSize: '13px', padding: '8px 14px', borderRadius: '8px', cursor: 'pointer'
           }}
         >
-          <Plus size={14} /> Nuevo cliente
+          <Plus size={14} /> Nuevo empleado
         </button>
       </div>
 
@@ -86,7 +81,7 @@ export default function Clientes() {
           borderRadius: '12px', padding: '20px', marginBottom: '16px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <h2 style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)' }}>Nuevo cliente</h2>
+            <h2 style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)' }}>Nuevo empleado</h2>
             <button onClick={() => setMostrarForm(false)} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer' }}>
               <X size={16} />
             </button>
@@ -94,9 +89,9 @@ export default function Clientes() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             {[
               { label: 'Nombre *', key: 'nombre', type: 'text', placeholder: 'Nombre completo' },
+              { label: 'Cargo', key: 'cargo', type: 'text', placeholder: 'Ej: Estilista, Manicurista' },
               { label: 'Teléfono', key: 'telefono', type: 'text', placeholder: '999 999 999' },
               { label: 'Email', key: 'email', type: 'email', placeholder: 'email@ejemplo.com' },
-              { label: 'Fecha de nacimiento', key: 'fecha_nac', type: 'date', placeholder: '' },
             ].map(f => (
               <div key={f.key}>
                 <label style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>{f.label}</label>
@@ -108,19 +103,10 @@ export default function Clientes() {
                 />
               </div>
             ))}
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Notas</label>
-              <textarea
-                value={form.notas}
-                onChange={e => setForm({ ...form, notas: e.target.value })}
-                placeholder="Preferencias, alergias, etc."
-                rows={2}
-              />
-            </div>
           </div>
           <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
             <button
-              onClick={guardarCliente}
+              onClick={guardarEmpleado}
               disabled={loading}
               style={{
                 background: 'var(--accent)', border: 'none', color: 'white',
@@ -141,78 +127,82 @@ export default function Clientes() {
       )}
 
       <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '12px' }}>
-        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
-          <div style={{ position: 'relative' }}>
-            <Search size={14} color="var(--text-tertiary)" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
-            <input
-              type="text"
-              value={busqueda}
-              onChange={e => setBusqueda(e.target.value)}
-              placeholder="Buscar por nombre, teléfono o email..."
-              style={{ paddingLeft: '32px' }}
-            />
-          </div>
-        </div>
-
-        {filtrados.length === 0 ? (
+        {empleados.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-tertiary)', fontSize: '13px' }}>
-            {busqueda ? 'No se encontraron clientes' : 'Aún no hay clientes registrados'}
+            No hay empleados registrados
           </div>
-        ) : filtrados.map(cliente => (
-          <div key={cliente.id} style={{
+        ) : empleados.map(emp => (
+          <div key={emp.id} style={{
             display: 'flex', alignItems: 'center', gap: '14px',
             padding: '12px 16px', borderBottom: '1px solid var(--border)',
-            transition: 'background .1s', cursor: 'default'
+            transition: 'background .1s'
           }}
             onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)'}
             onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
           >
             <div style={{
-              width: '34px', height: '34px', borderRadius: '50%',
-              background: 'var(--accent-light)', color: 'var(--accent)',
+              width: '36px', height: '36px', borderRadius: '50%',
+              background: emp.activo ? 'var(--accent-light)' : 'var(--bg-elevated)',
+              color: emp.activo ? 'var(--accent)' : 'var(--text-tertiary)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '13px', fontWeight: '500', flexShrink: 0
             }}>
-              {cliente.nombre.charAt(0).toUpperCase()}
+              {emp.nombre.charAt(0).toUpperCase()}
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
+
+            <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <p style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)' }}>{cliente.nombre}</p>
-                {cumpleEsSemana(cliente.fecha_nac) && (
+                <p style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)' }}>{emp.nombre}</p>
+                {emp.cargo && (
                   <span style={{
-                    fontSize: '11px', background: 'var(--warning-light)', color: 'var(--warning)',
-                    padding: '2px 8px', borderRadius: '99px', display: 'flex', alignItems: 'center', gap: '4px'
-                  }}>
-                    <Cake size={10} /> Cumpleaños
-                  </span>
+                    fontSize: '11px', background: 'var(--bg-elevated)', color: 'var(--text-secondary)',
+                    padding: '2px 8px', borderRadius: '99px', border: '1px solid var(--border)'
+                  }}>{emp.cargo}</span>
                 )}
+                <span style={{
+                  fontSize: '11px',
+                  background: emp.activo ? 'var(--success-light)' : 'var(--bg-elevated)',
+                  color: emp.activo ? 'var(--success)' : 'var(--text-tertiary)',
+                  padding: '2px 8px', borderRadius: '99px'
+                }}>{emp.activo ? 'Activo' : 'Inactivo'}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '2px' }}>
-                {cliente.telefono && (
+                {emp.telefono && (
                   <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Phone size={10} /> {cliente.telefono}
+                    <Phone size={10} /> {emp.telefono}
                   </span>
                 )}
-                {cliente.email && (
+                {emp.email && (
                   <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Mail size={10} /> {cliente.email}
+                    <Mail size={10} /> {emp.email}
                   </span>
                 )}
               </div>
             </div>
-            {cliente.notas && (
-              <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {cliente.notas}
-              </p>
-            )}
-            <button
-              onClick={() => eliminarCliente(cliente.id)}
-              style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: '4px' }}
-              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--danger)'}
-              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-tertiary)'}
-            >
-              <X size={14} />
-            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                onClick={() => toggleActivo(emp.id, emp.activo)}
+                style={{
+                  fontSize: '12px', padding: '5px 12px', borderRadius: '6px',
+                  border: `1px solid ${emp.activo ? 'var(--border)' : 'var(--success)'}`,
+                  background: emp.activo ? 'var(--bg-elevated)' : 'var(--success-light)',
+                  color: emp.activo ? 'var(--text-secondary)' : 'var(--success)',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px'
+                }}
+              >
+                <Check size={12} />
+                {emp.activo ? 'Desactivar' : 'Activar'}
+              </button>
+              <button
+                onClick={() => eliminar(emp.id)}
+                style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: '4px' }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--danger)'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-tertiary)'}
+              >
+                <X size={14} />
+              </button>
+            </div>
           </div>
         ))}
       </div>
